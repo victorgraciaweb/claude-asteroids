@@ -251,10 +251,10 @@ let state; // 'playing' | 'dead' | 'gameover'
 let deadTimer;
 
 // Power-up: ralentización temporal
-const SLOW_DURATION = 6;   // segundos que dura el efecto
-const SLOW_COOLDOWN = 12;  // segundos de recarga tras usarlo
-const SLOW_FACTOR   = 0.5; // factor de velocidad de asteroides
-let slowTimer;    // tiempo restante del efecto (0 = inactivo)
+const SLOW_DURATION = 6; // segundos que dura el efecto
+const SLOW_COOLDOWN = 12; // segundos de recarga tras usarlo
+const SLOW_FACTOR = 0.5; // factor de velocidad de asteroides
+let slowTimer; // tiempo restante del efecto (0 = inactivo)
 let slowCooldown; // tiempo restante de recarga (0 = listo)
 
 function spawnAsteroids(count) {
@@ -288,7 +288,7 @@ function nextLevel() {
   bullets = [];
   particles = [];
   ship.reset();
-  slowTimer = 0;    // el efecto no persiste entre niveles
+  slowTimer = 0; // el efecto no persiste entre niveles
   slowCooldown = 0;
   spawnAsteroids(3 + level);
 }
