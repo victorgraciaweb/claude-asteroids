@@ -250,13 +250,6 @@ let score, lives, level;
 let state; // 'playing' | 'dead' | 'gameover'
 let deadTimer;
 
-// Power-up: ralentización temporal
-const SLOW_DURATION = 6;   // segundos que dura el efecto
-const SLOW_COOLDOWN = 12;  // segundos de recarga tras usarlo
-const SLOW_FACTOR   = 0.5; // factor de velocidad de asteroides
-let slowTimer;    // tiempo restante del efecto (0 = inactivo)
-let slowCooldown; // tiempo restante de recarga (0 = listo)
-
 function spawnAsteroids(count) {
   const SAFE_DIST = 130;
   for (let i = 0; i < count; i++) {
@@ -278,8 +271,6 @@ function initGame() {
   lives = 3;
   level = 1;
   state = 'playing';
-  slowTimer = 0;
-  slowCooldown = 0;
   spawnAsteroids(4);
 }
 
@@ -288,8 +279,6 @@ function nextLevel() {
   bullets = [];
   particles = [];
   ship.reset();
-  slowTimer = 0;    // el efecto no persiste entre niveles
-  slowCooldown = 0;
   spawnAsteroids(3 + level);
 }
 
@@ -311,21 +300,6 @@ function killShip() {
 
 // ── Update ────────────────────────────────────────────────────────────────────
 function update(dt) {
-  // Timers del power-up (siempre activos para que el cooldown cuente en 'dead')
-  if (slowTimer > 0) {
-    slowTimer -= dt;
-    if (slowTimer <= 0) {
-      slowTimer = 0;
-      slowCooldown = SLOW_COOLDOWN; // arranca recarga al agotarse
-    }
-  } else if (slowCooldown > 0) {
-    slowCooldown -= dt;
-    if (slowCooldown < 0) slowCooldown = 0;
-  }
-
-  // dt efectivo para asteroides: la mitad mientras el efecto esté activo
-  const astDt = slowTimer > 0 ? dt * SLOW_FACTOR : dt;
-
   if (state === 'gameover') {
     if (pressed('Space')) initGame();
     particles.forEach((p) => p.update(dt));
@@ -337,17 +311,12 @@ function update(dt) {
     deadTimer -= dt;
     particles.forEach((p) => p.update(dt));
     particles = particles.filter((p) => !p.dead);
-    asteroids.forEach((a) => a.update(astDt));
+    asteroids.forEach((a) => a.update(dt));
     if (deadTimer <= 0) {
       state = 'playing';
       ship.reset();
     }
     return;
-  }
-
-  // Activar ralentización con tecla S
-  if (pressed('KeyS') && slowTimer <= 0 && slowCooldown <= 0) {
-    slowTimer = SLOW_DURATION;
   }
 
   // Disparar
@@ -357,7 +326,7 @@ function update(dt) {
 
   ship.update(dt);
   bullets.forEach((b) => b.update(dt));
-  asteroids.forEach((a) => a.update(astDt));
+  asteroids.forEach((a) => a.update(dt));
   particles.forEach((p) => p.update(dt));
 
   bullets = bullets.filter((b) => !b.dead);
@@ -421,21 +390,7 @@ function drawHUD() {
   ctx.textAlign = 'center';
   ctx.fillText(`NIVEL ${level}`, W / 2, 26);
 
-  // Indicador del power-up de ralentización
-  ctx.textAlign = 'right';
-  if (slowTimer > 0) {
-    ctx.fillStyle = '#4af';
-    ctx.fillText(`SLOW  ${Math.ceil(slowTimer)}s`, W - 14, 26);
-  } else if (slowCooldown > 0) {
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillText(`[S]  ${Math.ceil(slowCooldown)}s`, W - 14, 26);
-  } else {
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillText('[S]  LISTO', W - 14, 26);
-  }
-
-  ctx.fillStyle = '#fff';
-  for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 44);
+  for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 18);
 }
 
 function drawOverlay(title, sub) {
@@ -451,12 +406,6 @@ function drawOverlay(title, sub) {
 function draw() {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
-
-  // Tinte azulado mientras la ralentización está activa
-  if (slowTimer > 0) {
-    ctx.fillStyle = 'rgba(30, 120, 255, 0.07)';
-    ctx.fillRect(0, 0, W, H);
-  }
 
   particles.forEach((p) => p.draw());
   asteroids.forEach((a) => a.draw());
